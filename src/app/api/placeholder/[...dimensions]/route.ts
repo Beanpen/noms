@@ -1,10 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { dimensions: string[] } }
-) {
-  const [width, height] = params.dimensions;
+export async function GET(request: NextRequest) {
+  // Get dimensions from the URL path
+  const dimensions = request.nextUrl.pathname
+    .replace('/api/placeholder/', '')
+    .split('/');
+    
+  const [width, height] = dimensions;
 
   // Create an SVG placeholder with the specified dimensions
   const svg = `

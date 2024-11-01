@@ -17,9 +17,7 @@ import {
   MessageCircle,
   Users,
   Bookmark,
-  Star,
   Globe,
-  ChevronRight,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -41,31 +39,12 @@ interface City {
   placeId: string;
 }
 
-interface SearchResult {
-  id: string;
-  type: "place" | "dish" | "cuisine" | "user";
-  name: string;
-  description: string;
-  image?: string;
-  location?: {
-    address: string;
-    city: string;
-    country: string;
-    coordinates: {
-      lat: number;
-      lng: number;
-    };
-  };
-  rating?: number;
-  priceLevel?: string;
-}
-
 const HomePage = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [popularCities, setPopularCities] = useState<City[]>([
+  const [popularCities] = useState<City[]>([
     { id: "1", name: "New York", country: "USA", placeId: "nyc_id" },
     { id: "2", name: "Tokyo", country: "Japan", placeId: "tokyo_id" },
     { id: "3", name: "Paris", country: "France", placeId: "paris_id" },
@@ -287,29 +266,32 @@ const HomePage = () => {
   };
 
   const reverseGeocode = async (lat: number, lng: number) => {
-    // Use Google's Geocoding API to get city from coordinates
-    const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`
-    );
-    const data = await response.json();
+    // TODO: Use Google's Geocoding API to get city from coordinates
+    // const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
+    // const response = await fetch(
+    //   `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`
+    // );
+    // const data = await response.json();
 
-    if (data.results?.length > 0) {
-      const cityComponent = data.results[0].address_components.find(
-        (component: any) => component.types.includes("locality")
-      );
-      const countryComponent = data.results[0].address_components.find(
-        (component: any) => component.types.includes("country")
-      );
+    // if (data.results?.length > 0) {
+    //   const cityComponent = data.results[0].address_components.find(
+    //     (component: any) => component.types.includes("locality")
+    //   );
+    //   const countryComponent = data.results[0].address_components.find(
+    //     (component: any) => component.types.includes("country")
+    //   );
 
-      if (cityComponent && countryComponent) {
-        return {
-          id: data.results[0].place_id,
-          name: cityComponent.long_name,
-          country: countryComponent.long_name,
-          placeId: data.results[0].place_id,
-        };
-      }
+    //   if (cityComponent && countryComponent) {
+    //     return {
+    //       id: data.results[0].place_id,
+    //       name: cityComponent.long_name,
+    //       country: countryComponent.long_name,
+    //       placeId: data.results[0].place_id,
+    //     };
+    //   }
+    // }
+    if (lat === 0 && lng === 0) {
+      return null;
     }
     return null;
   };

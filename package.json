@@ -1,14 +1,15 @@
 {
   "name": "noms",
   "version": "0.1.0",
+  "homepage": "https://Beanpen.github.io/noms",
   "private": true,
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "export": "next build && next export",
+    "deploy": "npm run export && touch out/.nojekyll && gh-pages -d out --dotfiles"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.1",
@@ -33,8 +34,8 @@
     "eslint-config-next": "15.0.2",
     "gh-pages": "^6.2.0",
     "postcss": "^8",
+    "sucrase": "^3.35.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
-  },
-  "homepage": "https://github.com/Beanpen/noms"
+  }
 }

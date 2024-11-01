@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Search,
@@ -9,12 +9,8 @@ import {
   ChevronDown,
   ChevronUp,
   Map,
-  Filter,
   Star,
-  Clock,
-  Users,
   Heart,
-  ExternalLink,
   Navigation,
   Bookmark,
   Building2,
@@ -23,7 +19,6 @@ import {
   Trophy,
   User,
   Globe,
-  Camera,
   Clock3,
   DollarSign,
   Sparkles,
@@ -42,9 +37,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { SearchResult } from "@/lib/types";
+import { SearchResult, RestaurantResult, DishResult, PostResult, ExpertResult } from "@/lib/types";
 
 // Types
 type Category = {
@@ -54,7 +48,8 @@ type Category = {
   description: string;
 };
 
-export default function SearchResultsPage() {
+// Wrap the main component in Suspense
+function SearchResults() {
   // Router and params
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -71,208 +66,219 @@ export default function SearchResultsPage() {
   const [ratingFilter, setRatingFilter] = useState<number | null>(null);
   const [distanceFilter, setDistanceFilter] = useState<number | null>(null);
   const [openNowFilter, setOpenNowFilter] = useState(false);
-  const [sortBy, setSortBy] = useState<'relevance' | 'rating' | 'distance' | 'price'>('relevance');
-  
-    // Toggle expanded state
-    const toggleExpanded = (id: string) => {
-      setExpandedResults(prev => 
-        prev.includes(id) 
-          ? prev.filter(item => item !== id)
-          : [...prev, id]
-      );
-    };
-  
-    // Reset all filters
-    const resetFilters = () => {
-      setPriceFilter([]);
-      setRatingFilter(null);
-      setDistanceFilter(null);
-      setOpenNowFilter(false);
-      setSortBy('relevance');
-    };
+  const [sortBy] = useState<"relevance" | "rating" | "distance" | "price">(
+    "relevance"
+  );
 
-// Example search results data
-const searchResults: SearchResult[] = [
-  {
-    id: '1',
-    type: 'restaurant',
-    title: 'Sushi Master',
-    description: 'Traditional Edomae sushi experience with fresh seasonal fish',
-    image: '/api/placeholder/400/300',
-    location: 'Ginza, Tokyo',
-    priceRange: '$$$$',
-    cuisine: 'Japanese',
-    rating: 4.9,
-    reviews: 1250,
-    isVerified: true,
-    tags: ['Sushi', 'Fine Dining', 'Omakase'],
-    openNow: true,
-    distance: '0.8 km',
-    popularDishes: [
-      { name: 'Omakase Course', price: '$150', rating: 4.9 },
-      { name: 'Seasonal Nigiri Set', price: '$85', rating: 4.8 }
-    ]
-  },
-  {
-    id: '2',
-    type: 'dish',
-    title: 'Tonkotsu Ramen',
-    description: 'Rich and creamy pork bone broth ramen',
-    image: '/api/placeholder/400/300',
-    cuisine: 'Japanese',
-    priceRange: '$$',
-    rating: 4.8,
-    tags: ['Ramen', 'Popular', 'Comfort Food'],
-    ingredients: ['Pork bone broth', 'Chashu pork', 'Ajitsuke egg'],
-    dietaryInfo: ['Contains pork', 'Non-vegetarian'],
-    whereToFind: [
-      { 
-        name: 'Ichiran Ramen',
-        location: 'Shibuya',
-        price: '¥980',
-        rating: 4.7,
-        distance: '0.3 km'
-      }
-    ]
-  },
-  {
-    id: '3',
-    type: 'post',
-    title: 'My Tokyo Food Diary',
-    description: 'A collection of my favorite food spots in Tokyo',
-    image: '/api/placeholder/400/300',
-    author: {
-      name: 'John Doe',
-      image: '/api/placeholder/100/100',
-      isVerified: true,
-    },
-    postedAt: '3 days ago',
-    likes: 150,
-    comments: 20,
-  },
-  {
-    id: '4',
-    type: 'expert',
-    title: 'Sushi Expert',
-    description: 'Local sushi chef with 20 years of experience',
-    image: '/api/placeholder/400/300',
-    expertise: ['Sushi', 'Japanese Cuisine', 'Omakase'],
-    languages: ['Japanese', 'English'],
-    recentActivity: [
-      { type: 'review', title: 'Best Sushi in Tokyo', date: '2 days ago' },
-      { type: 'guide', title: 'Sushi Etiquette 101', date: '1 week ago' }
-    ],
-    followers: 500,
-    recommendations: 50,
-    location: 'Tokyo, Japan'
-  }
-];
-  
-    // Handle search
-    const handleSearch = (e: React.FormEvent) => {
-      e.preventDefault();
-      const params = new URLSearchParams(searchParams);
-      params.set('q', searchQuery);
-      params.set('category', activeCategory);
-      router.push(`/search?${params.toString()}`);
-    };
-    
-  
-    // Apply filters and sort
-    useEffect(() => {
-      let results = [...searchResults]; // Assuming searchResults is your base data
-  
-      // Apply category filter
-      if (activeCategory !== 'top') {
-        results = results.filter(result => {
-          switch (activeCategory) {
-            case 'restaurants':
-              return result.type === 'restaurant';
-            case 'dishes':
-              return result.type === 'dish';
-            case 'posts':
-              return result.type === 'post';
-            case 'experts':
-              return result.type === 'expert';
-            default:
-              return true;
-          }
-        });
-      }
-  
-      // Apply price filter
-      if (priceFilter.length > 0) {
-        results = results.filter(result => 
-          'priceRange' in result && result.priceRange && priceFilter.includes(result.priceRange)
-        );
-      }
-  
-      // Apply rating filter
-      if (ratingFilter) {
-        results = results.filter(result => 
-          result.rating && result.rating >= ratingFilter
-        );
-      }
-  
-      // Apply distance filter
-      if (distanceFilter && results.some(r => 'distance' in r)) {
-        results = results.filter(result => {
-          if ('distance' in result && result.distance) {
-            const distanceNum = typeof result.distance === 'string' ? parseFloat(result.distance.replace('km', '')) : 0;
-            return distanceNum <= distanceFilter;
-          }
-          return false;
-        });
-      }
-  
-      // Apply open now filter
-      if (openNowFilter) {
-        results = results.filter(result => 
-          result.type === 'restaurant' && result.openNow
-        );
-      }
-  
-      // Apply sorting
-      results.sort((a, b) => {
-        switch (sortBy) {
-          case 'rating':
-            return (b.rating || 0) - (a.rating || 0);
-          case 'distance':
-            if ('distance' in a && 'distance' in b) {
-              const distA = typeof a.distance === 'string' ? parseFloat(a.distance.replace('km', '')) : 0;
-              const distB = typeof b.distance === 'string' ? parseFloat(b.distance.replace('km', '')) : 0;
-              return distA - distB;
-            }
-            return 0;
-          case 'price':
-            if ('priceRange' in a && 'priceRange' in b) {
-              return (a.priceRange?.length || 0) - (b.priceRange?.length || 0);
-            }
-            return 0;
+  // Move searchResults into useMemo to prevent unnecessary re-renders
+  const searchResults: SearchResult[] = useMemo(
+      () => [
+        // Example search results data
+        {
+          id: "1",
+          type: "restaurant",
+          title: "Sushi Master",
+          description:
+            "Traditional Edomae sushi experience with fresh seasonal fish",
+          image: "/api/placeholder/400/300",
+          location: "Ginza, Tokyo",
+          priceRange: "$$$$",
+          cuisine: "Japanese",
+          rating: 4.9,
+          reviews: 1250,
+          isVerified: true,
+          tags: ["Sushi", "Fine Dining", "Omakase"],
+          openNow: true,
+          distance: "0.8 km",
+          popularDishes: [
+            { name: "Omakase Course", price: "$150", rating: 4.9 },
+            { name: "Seasonal Nigiri Set", price: "$85", rating: 4.8 },
+          ],
+        } as RestaurantResult,
+        {
+          id: "2",
+          type: "dish",
+          title: "Tonkotsu Ramen",
+          description: "Rich and creamy pork bone broth ramen",
+          image: "/api/placeholder/400/300",
+          cuisine: "Japanese",
+          priceRange: "$$",
+          rating: 4.8,
+          tags: ["Ramen", "Popular", "Comfort Food"],
+          ingredients: ["Pork bone broth", "Chashu pork", "Ajitsuke egg"],
+          dietaryInfo: ["Contains pork", "Non-vegetarian"],
+          whereToFind: [
+            {
+              name: "Ichiran Ramen",
+              location: "Shibuya",
+              price: "¥980",
+              rating: 4.7,
+              distance: "0.3 km",
+            },
+          ],
+        } as DishResult,
+        {
+          id: "3",
+          type: "post",
+          title: "My Tokyo Food Diary",
+          description: "A collection of my favorite food spots in Tokyo",
+          image: "/api/placeholder/400/300",
+          author: {
+            name: "John Doe",
+            image: "/api/placeholder/100/100",
+            isVerified: true,
+          },
+          postedAt: "3 days ago",
+          likes: 150,
+          comments: 20,
+        } as PostResult,
+        {
+          id: "4",
+          type: "expert",
+          title: "Sushi Expert",
+          description: "Local sushi chef with 20 years of experience",
+          image: "/api/placeholder/400/300",
+          expertise: ["Sushi", "Japanese Cuisine", "Omakase"],
+          languages: ["Japanese", "English"],
+          recentActivity: [
+            { type: "review", title: "Best Sushi in Tokyo", date: "2 days ago" },
+            { type: "guide", title: "Sushi Etiquette 101", date: "1 week ago" },
+          ],
+          followers: 500,
+          recommendations: 50,
+          location: "Tokyo, Japan",
+        } as ExpertResult,
+      ],
+      []
+    ); // Empty dependency array since this data is static
+
+  // Toggle expanded state
+  const toggleExpanded = (id: string) => {
+    setExpandedResults(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
+    );
+  };
+
+  // Handle search
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams(searchParams);
+    params.set("q", searchQuery);
+    params.set("category", activeCategory);
+    router.push(`/search?${params.toString()}`);
+  };
+
+  // Apply filters and sort
+  useEffect(() => {
+    let results = [...searchResults]; // Assuming searchResults is your base data
+
+    // Apply category filter
+    if (activeCategory !== "top") {
+      results = results.filter((result) => {
+        switch (activeCategory) {
+          case "restaurants":
+            return result.type === "restaurant";
+          case "dishes":
+            return result.type === "dish";
+          case "posts":
+            return result.type === "post";
+          case "experts":
+            return result.type === "expert";
           default:
-            return 0;
+            return true;
         }
       });
-  
-      setFilteredResults(results);
-    }, [
-      activeCategory,
-      priceFilter,
-      ratingFilter,
-      distanceFilter,
-      openNowFilter,
-      sortBy,
-      searchResults
-    ]);
-  
-    // Initialize from URL params
-    useEffect(() => {
+    }
+
+    // Apply price filter
+    if (priceFilter.length > 0) {
+      results = results.filter(
+        (result) =>
+          "priceRange" in result &&
+          result.priceRange &&
+          priceFilter.includes(result.priceRange)
+      );
+    }
+
+    // Apply rating filter
+    if (ratingFilter) {
+      results = results.filter(
+        (result) => result.rating && result.rating >= ratingFilter
+      );
+    }
+
+    // Apply distance filter
+    if (distanceFilter && results.some((r) => "distance" in r)) {
+      results = results.filter((result) => {
+        if ("distance" in result && result.distance) {
+          const distanceNum =
+            typeof result.distance === "string"
+              ? parseFloat(result.distance.replace("km", ""))
+              : 0;
+          return distanceNum <= distanceFilter;
+        }
+        return false;
+      });
+    }
+
+    // Apply open now filter
+    if (openNowFilter) {
+      results = results.filter(
+        (result) => result.type === "restaurant" && result.openNow
+      );
+    }
+
+    // Apply sorting
+    results.sort((a, b) => {
+      switch (sortBy) {
+        case "rating":
+          return (b.rating || 0) - (a.rating || 0);
+        case "distance":
+          if ("distance" in a && "distance" in b) {
+            const distA =
+              typeof a.distance === "string"
+                ? parseFloat(a.distance.replace("km", ""))
+                : 0;
+            const distB =
+              typeof b.distance === "string"
+                ? parseFloat(b.distance.replace("km", ""))
+                : 0;
+            return distA - distB;
+          }
+          return 0;
+        case "price":
+          if ("priceRange" in a && "priceRange" in b) {
+            return (a.priceRange?.length || 0) - (b.priceRange?.length || 0);
+          }
+          return 0;
+        default:
+          return 0;
+      }
+    });
+
+    setFilteredResults(results);
+  }, [
+    activeCategory,
+    priceFilter,
+    ratingFilter,
+    distanceFilter,
+    openNowFilter,
+    sortBy,
+    searchResults,
+  ]);
+
+  // Initialize from URL params - use null check for searchParams
+  useEffect(() => {
+    if (searchParams) {
       const query = searchParams.get('q') || '';
       const category = searchParams.get('category') || 'top';
       
       setSearchQuery(query);
       setActiveCategory(category);
-    }, [searchParams]);
+    }
+  }, [searchParams]);
 
   // Categories definition
   const categories: Category[] = [
@@ -866,13 +872,22 @@ const searchResults: SearchResult[] = [
               </div>
               <h3 className="text-lg font-medium mb-2">No results found</h3>
               <p className="text-gray-600">
-                Try adjusting your search or filters to find what you're looking
-                for
+                Try adjusting your search or filters to find what you&apos;re
+                looking for
               </p>
             </div>
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+// Wrap the export in Suspense
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SearchResults />
+    </Suspense>
   );
 }
